@@ -6,7 +6,8 @@
 TEST(Minimal_Test,test_detect_multiple_face)
 {
     DetectorResult faces;
-    faces=detect_faces("../test_images/images-000.png"); 
+    initialize_haar_cascade("haarcascade_frontalface_alt.xml");
+    faces=detect_faces("test_images/multiple_faces.png"); 
     ASSERT_EQ(faces.errorCode,DETECT_FACE_ERR_NONE);
     EXPECT_EQ(faces.faces.size(),9);
 }

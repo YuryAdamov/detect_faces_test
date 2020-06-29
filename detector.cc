@@ -5,7 +5,26 @@ std::unique_ptr<cv::CascadeClassifier> cascade_;
 
 const double scaleFactor=2.0;
 
-DetectorResult detect_faces(std::string file_path)
+DetectError initialize_haar_cascade(void)
+{
+    return initialize_haar_cascade("haarcascade_frontalface_alt.xml");
+}
+
+DetectError initialize_haar_cascade(const std::string &cascadePath)
+{
+    if(cascade_ == NULL)
+    {
+        cascade_ = std::make_unique<cv::CascadeClassifier>();
+        if(!cascade_->load(cascadePath))
+        {
+            cascade_ = NULL;
+            return DETECT_FACE_NO_CASCADE;
+        }
+    }
+    return DETECT_FACE_ERR_NONE;
+}
+
+DetectorResult detect_faces(const std::string &file_path)
 {
     cv::Mat image,processed_image;
     std::vector<cv::Rect> faces;
@@ -16,15 +35,7 @@ DetectorResult detect_faces(std::string file_path)
         return DetectorResult(DETECT_FACE_BAD_IMAGE);
     }
 
-    if(cascade_ == NULL)
-    {
-        cascade_ = std::make_unique<cv::CascadeClassifier>();
-        if(!cascade_->load("haarcascade_frontalface_alt.xml"))
-        {
-            cascade_ = NULL;
-            return DetectorResult(DETECT_FACE_NO_CASCADE);
-        }
-    }
+    initialize_haar_cascade();
 
     cascade_->detectMultiScale(image,faces,1.1,2,cv::CASCADE_SCALE_IMAGE,cv::Size(30,30));
 

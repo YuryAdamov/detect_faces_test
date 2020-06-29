@@ -23,9 +23,9 @@ enum DetectError
 struct DetectorResult
 {
     DetectorResult():errorCode(DETECT_FACE_NOT_INITIALIZED),fileName(),faces(){}
-    DetectorResult(DetectError error, std::vector<cv::Rect> faces, std::string file): errorCode(error),fileName(file),faces(faces){}
-    DetectorResult(DetectError error, std::vector<cv::Rect> faces): errorCode(error),fileName(),faces(faces){}
-    DetectorResult(DetectError error): errorCode(error),fileName(),faces(){}
+    DetectorResult(const DetectError error, const std::vector<cv::Rect> &faces, const std::string &file): errorCode(error),fileName(file),faces(faces){}
+    DetectorResult(const DetectError error, const std::vector<cv::Rect> &faces): errorCode(error),fileName(),faces(faces){}
+    explicit DetectorResult(const DetectError error): errorCode(error),fileName(),faces(){}
 
     DetectError errorCode;
     std::string fileName;
@@ -34,6 +34,8 @@ struct DetectorResult
 };
 
 
-DetectorResult detect_faces(std::string file_path);
+DetectError initialize_haar_cascade(void);
+DetectError initialize_haar_cascade(const std::string &cascadePath);
+DetectorResult detect_faces(const std::string &file_path);
 
 #endif
