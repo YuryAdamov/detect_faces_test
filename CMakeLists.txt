@@ -4,6 +4,16 @@ project (DetectFaces )
 find_package(OpenCV REQUIRED)
 find_package(Boost 1.55.0 COMPONENTS filesystem system)
 
+if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
+endif()
+if(NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
+  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
+endif()
+if(NOT CMAKE_ARCHIVE_OUTPUT_DIRECTORY)
+  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
+endif()
+
 #We need fetchcontent for gtests
 include(FetchContent)
 FetchContent_Declare(
@@ -18,13 +28,16 @@ if(NOT googletest_POPULATED)
 endif()
 
 # Face detection library
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 add_library(detector_lib SHARED detector.cc detector.h)
+target_include_directories( detector_lib PRIVATE ${Boost_INCLUDE_DIRS})
 include_directories(${googletest_SOURCE_DIR}/googletest/include)
 target_link_libraries( detector_lib ${OpenCV_LIBS} )
 # ?? install(FILE haarcascade_frontalface_alt.xml DESTINATION )
 
 #example executable
 add_executable(simple_detect simple_detect.cc)
+target_include_directories( simple_detect PRIVATE ${Boost_INCLUDE_DIRS})
 target_link_libraries( simple_detect detector_lib)
 target_link_libraries( simple_detect ${Boost_LIBRARIES} )
 
