@@ -29,32 +29,39 @@ int main(int argc, char *argv[])
 
    std::vector<std::string> json_items;
    
-   for ( 
-           bfs::recursive_directory_iterator end, dir(dirpath);
-    dir != end; ++dir 
-    ) 
+   try
    {
-    // std::cout << *dir << "\n";  // full path
-    std::cout << dir->path() << std::endl; 
-    faces = detect_faces(dir->path().string());
+       for ( 
+               bfs::recursive_directory_iterator end, dir(dirpath);
+        dir != end; ++dir 
+        ) 
+       {
+        // std::cout << *dir << "\n";  // full path
+        std::cout << dir->path() << std::endl; 
+        faces = detect_faces(dir->path().string());
 
-    json_items.push_back(faces.toJson());
+        json_items.push_back(faces.toJson());
 
 
-    if(faces.errorCode==DETECT_FACE_ERR_NONE){
-        for(auto &face: faces.faces){
-            std::cout<<face<<std::endl;
+        if(faces.errorCode==DETECT_FACE_ERR_NONE){
+            for(auto &face: faces.faces){
+                std::cout<<face<<std::endl;
+            }
         }
-    }
 
-    
-    //std::cout<<faces<<std::endl;
+        
+        //std::cout<<faces<<std::endl;
+       }
+
+       bfs::path out_path = dirpath/"result.json"; 
+       std::ofstream resultJson(out_path.string());
+
+       resultJson<<"["<<boost::join(json_items,",\n")<<"\n]\n";
    }
-
-   bfs::path out_path = dirpath/"result.json"; 
-   std::ofstream resultJson(out_path.string());
-
-   resultJson<<"["<<boost::join(json_items,",\n")<<"\n]\n";
+   catch(const bfs::filesystem_error& ex)
+   {
+       std::cerr<<ex.what()<<std::endl;
+   }
 
 }
 
