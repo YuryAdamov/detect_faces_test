@@ -3,12 +3,12 @@
 #include "testconf.h"
 
 
-TEST(Minimal_Test,test_detect_one_face)
+TEST(Minimal_Test,test_detect_multiple_face)
 {
-    std::pair<DetectError,std::vector<cv::Rect>> faces;
+    DetectorResult faces;
     faces=detect_faces("../test_images/images-000.png"); 
-    ASSERT_EQ(faces.first,DETECT_FACE_ERR_NONE);
-    EXPECT_EQ(faces.second.size(),9);
+    ASSERT_EQ(faces.errorCode,DETECT_FACE_ERR_NONE);
+    EXPECT_EQ(faces.faces.size(),9);
 }
 
 

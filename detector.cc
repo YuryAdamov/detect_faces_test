@@ -1,38 +1,42 @@
 #include "detector.h"
+#include <boost/algorithm/string/join.hpp>
 
 std::unique_ptr<cv::CascadeClassifier> cascade_;
 
 const double scaleFactor=2.0;
 
-std::pair<DetectError,std::vector<cv::Rect>> detect_faces(std::string file_path)
+DetectorResult detect_faces(std::string file_path)
 {
-    cv::Mat image,processed_image,processed_image2;
-    std::vector<cv::Rect> result;
+    cv::Mat image,processed_image;
+    std::vector<cv::Rect> faces;
+
     image = cv::imread(file_path,cv::IMREAD_GRAYSCALE);
     if(image.empty())
     {
-        return std::make_pair(DETECT_FACE_BAD_IMAGE,result);
+        return DetectorResult(DETECT_FACE_BAD_IMAGE);
     }
+
     if(cascade_ == NULL)
     {
         cascade_ = std::make_unique<cv::CascadeClassifier>();
         if(!cascade_->load("haarcascade_frontalface_alt.xml"))
         {
             cascade_ = NULL;
-            return std::make_pair(DETECT_FACE_NO_CASCADE,result);
+            return DetectorResult(DETECT_FACE_NO_CASCADE);
         }
     }
-    cascade_->detectMultiScale(image,result,1.1,2,cv::CASCADE_SCALE_IMAGE,cv::Size(30,30));
+
+    cascade_->detectMultiScale(image,faces,1.1,2,cv::CASCADE_SCALE_IMAGE,cv::Size(30,30));
 
     image = cv::imread(file_path,cv::IMREAD_COLOR);
 
     if(image.empty())
     {
-        return std::make_pair(DETECT_FACE_SECOND_READ_ERR,result);
+        return DetectorResult(DETECT_FACE_SECOND_READ_ERR,faces);
     }
 
     cv::resize(image,processed_image,cv::Size(),1/scaleFactor,1/scaleFactor,cv::INTER_LINEAR);
-    for(auto &rect: result)
+    for(auto &rect: faces)
     {
         cv::Rect new_rect;
         new_rect.x=rect.x/scaleFactor;
@@ -43,8 +47,61 @@ std::pair<DetectError,std::vector<cv::Rect>> detect_faces(std::string file_path)
         cv::blur(processed_image(new_rect),processed_image(new_rect),cv::Size(new_rect.height/10,new_rect.height/10));
     }
 
-    cv::imwrite(file_path+"_processed.jpg",processed_image);
+    std::string newFilePath;
+    newFilePath = file_path + "_processed.jpg";
+    cv::imwrite(newFilePath,processed_image);
 
-    return std::make_pair(DETECT_FACE_ERR_NONE,result);
+    return DetectorResult(DETECT_FACE_ERR_NONE,faces,newFilePath);
 }
 
+std::string jsonQuote(std::string s)
+{
+    std::ostringstream res;
+    res<<'"';
+    for (auto c=s.cbegin(); c != s.cend(); c++)
+    {
+        switch(*c)
+        {
+          case '"' : 
+              res<<'\\'<<'"';
+              break;
+          case '\\' : 
+              res << "\\\\";
+              break;
+          default:
+              res<<*c;
+        }
+    }
+    res<<'"';
+    return res.str();
+
+}
+
+std::string DetectorResult::toJson(void)
+{
+    std::ostringstream resStr;
+    if(errorCode == DETECT_FACE_ERR_NONE)
+    {
+        resStr<<"{"<<"filename:"<<jsonQuote(fileName)<<","<<"faces: [";
+        std::vector<std::string> faces_strings;
+        faces_strings.reserve(faces.size());
+        for(auto &face : faces)
+        {
+            std::ostringstream givenFace;
+            givenFace<<"{ tl_x:"<<face.x
+                <<",tl_y:"<<face.y
+                <<",width:"<<face.width
+                <<",height:"<<face.height<<"}";
+            faces_strings.push_back(givenFace.str());
+        }
+        resStr<<boost::join(faces_strings,", ");
+        resStr<<"]}";
+    }
+    else
+    {
+        resStr<<"{"<<"error:"<<errorCode<<"}";
+    }
+    return resStr.str();
+
+
+}
