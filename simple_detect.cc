@@ -4,6 +4,8 @@
 #include <boost/algorithm/string/join.hpp>
 #include "detector.h"
 
+namespace bfs = boost::filesystem;
+
 void usage(void)
 {
     std::cerr<<"Usage: simple_detect <path_to_files>"<<std::endl;
@@ -15,12 +17,20 @@ int main(int argc, char *argv[])
    if(argc != 2)
    {
        usage();
-       exit(0);
+       exit(1);
    }
+   bfs::path dirpath(argv[1]);
+
+   if(!bfs::is_directory(dirpath))
+   {
+       usage();
+       exit(2);
+   }
+
    std::vector<std::string> json_items;
    
    for ( 
-           boost::filesystem::recursive_directory_iterator end, dir(argv[1]);
+           bfs::recursive_directory_iterator end, dir(dirpath);
     dir != end; ++dir 
     ) 
    {
@@ -36,10 +46,15 @@ int main(int argc, char *argv[])
             std::cout<<face<<std::endl;
         }
     }
+
+    
     //std::cout<<faces<<std::endl;
    }
 
-   std::cout<<"["<<boost::join(json_items,",\n")<<"\n]\n";
+   bfs::path out_path = dirpath/"result.json"; 
+   std::ofstream resultJson(out_path.string());
+
+   resultJson<<"["<<boost::join(json_items,",\n")<<"\n]\n";
 
 }
 
